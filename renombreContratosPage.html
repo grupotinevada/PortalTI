@@ -221,22 +221,46 @@ async function renameFiles() {
   saveAll.classList.remove("hidden");
 }
 document.getElementById("saveAll").addEventListener("click", async () => {
-      if (processedFiles.length === 0) {
-        alert("No hay archivos para guardar.");
-        return;
-      }
+  if (processedFiles.length === 0) {
+    alert("No hay archivos para guardar.");
+    return;
+  }
 
-      const dirHandle = await window.showDirectoryPicker();
-      for (const { file, newFileName } of processedFiles) {
+  const dirHandle = await window.showDirectoryPicker();
+  const batchSize = 30; // Tamaño de cada lote de archivos
+  const fileCount = processedFiles.length;
+
+  for (let i = 0; i < fileCount; i += batchSize) {
+    const batch = processedFiles.slice(i, i + batchSize); // Extraer el lote de 10 archivos
+    await saveFiles(batch, dirHandle);
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // Retraso de 1 segundo entre grupos
+  }
+
+  alert("Todos los archivos se han guardado correctamente.");
+});
+
+// Función para guardar un lote de archivos con 0.8 segundos de retraso entre cada uno
+async function saveFiles(batch, dirHandle) {
+  let retries = 2; // Número de intentos permitidos
+  for (const { file, newFileName } of batch) {
+    let success = false;
+    while (!success && retries > 0) {
+      try {
         const fileHandle = await dirHandle.getFileHandle(newFileName, { create: true });
         const writable = await fileHandle.createWritable();
         await writable.write(file);
         await writable.close();
-        await new Promise((resolve) => setTimeout(resolve, 200)); // Retraso entre archivos
+        success = true;
+      } catch (error) {
+        retries--;
+        console.error(`Error al guardar ${newFileName}, intentando de nuevo (${2 - retries}):`, error);
       }
-
-      alert("Todos los archivos se han guardado correctamente.");
-    });
+    }
+    if (!success) {
+      console.error(`No se pudo guardar el archivo ${newFileName} después de varios intentos.`);
+    }
+  }
+}
   </script>
 </body>
 </html>
