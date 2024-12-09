@@ -5,7 +5,7 @@
   padding: 0;
 }
 
-body {
+.body-index {
   background: #000046;  /* fallback for old browsers */
   background: linear-gradient(to top, #1CB5E0, #000046); /* W3C, IE 10+/ Edge, Firefox 16+, Chrome 26+, Opera 12+, Safari 7+ */
   background-size: contain;
@@ -41,7 +41,7 @@ body {
 }
 
 .category:hover {
- transform: scale(1.2);
+ transform: scale(1.1);
  background: linear-gradient(to bottom, #94d2e3, #8686c2);
  color: white !important;
  cursor: pointer;
@@ -131,3 +131,4 @@ footer {
     transform: translateX(-100%); /* Se mueve hasta estar fuera del contenedor por la izquierda */
   }
 }
+

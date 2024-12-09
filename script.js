@@ -46,3 +46,7 @@ function cargarManuales(categoria) {
       listaManuales.appendChild(li);
   });
 }
+
+
+//renombre de contratos
+
