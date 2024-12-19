@@ -193,7 +193,14 @@ async function renameFiles() {
       const nombreEncontrado = buscarNombre(textoPDF) || "SinNombre";
 
       // Generar el nuevo nombre del archivo
-      const newFileName = `${codigoEncontrado} - ${nombreEncontrado}.pdf`;
+      let baseFileName = `${codigoEncontrado} - ${nombreEncontrado}`;
+      let newFileName = `${baseFileName}.pdf`;
+      let counter = 1;
+
+      // Asegurarse de que el nombre sea único
+      while (processedFiles.some((processed) => processed.newFileName === newFileName)) {
+        newFileName = `${baseFileName}(${counter++}).pdf`;
+      }
 
       // Guardar el archivo procesado en la lista
       processedFiles.push({ file, newFileName });
@@ -220,6 +227,7 @@ async function renameFiles() {
   spinner.style.display = "none";
   saveAll.classList.remove("hidden");
 }
+
 document.getElementById("saveAll").addEventListener("click", async () => {
   if (processedFiles.length === 0) {
     alert("No hay archivos para guardar.");
@@ -227,7 +235,7 @@ document.getElementById("saveAll").addEventListener("click", async () => {
   }
 
   const dirHandle = await window.showDirectoryPicker();
-  const batchSize = 30; // Tamaño de cada lote de archivos
+  const batchSize = 20; // Tamaño de cada lote de archivos
   const fileCount = processedFiles.length;
 
   for (let i = 0; i < fileCount; i += batchSize) {
@@ -244,23 +252,32 @@ async function saveFiles(batch, dirHandle) {
   let retries = 2; // Número de intentos permitidos
   for (const { file, newFileName } of batch) {
     let success = false;
+    let uniqueFileName = newFileName;
+    let counter = 1;
+
     while (!success && retries > 0) {
       try {
-        const fileHandle = await dirHandle.getFileHandle(newFileName, { create: true });
+        // Verificar si el archivo ya existe y generar un nombre único
+        while (await dirHandle.getFileHandle(uniqueFileName, { create: false }).catch(() => false)) {
+          uniqueFileName = newFileName.replace(/\.pdf$/, `(${counter++}).pdf`);
+        }
+
+        const fileHandle = await dirHandle.getFileHandle(uniqueFileName, { create: true });
         const writable = await fileHandle.createWritable();
         await writable.write(file);
         await writable.close();
         success = true;
       } catch (error) {
         retries--;
-        console.error(`Error al guardar ${newFileName}, intentando de nuevo (${2 - retries}):`, error);
+        console.error(`Error al guardar ${uniqueFileName}, intentando de nuevo (${2 - retries}):`, error);
       }
     }
     if (!success) {
-      console.error(`No se pudo guardar el archivo ${newFileName} después de varios intentos.`);
+      console.error(`No se pudo guardar el archivo ${uniqueFileName} después de varios intentos.`);
     }
   }
 }
+
   </script>
 </body>
 </html>
